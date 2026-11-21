@@ -1,20 +1,16 @@
 <!doctype html>
-<html lang="en" data-theme="dark">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Trendline is a play-money game: buy and sell shares in the top 10 YouTube creators. No cash value, no deposits, no withdrawals." />
-    <meta name="theme-color" content="#0c0c0b" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <title>Trendline — play-money artist market</title>
-    <script>
-      // Set theme before paint to avoid a flash.
-      try {
-        var t = localStorage.getItem('trendline-theme');
-        if (!t) t = 'dark';
-        document.documentElement.setAttribute('data-theme', t);
-      } catch (e) {}
-    </script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#050505" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+    <meta name="description" content="An LED scoreboard for Hyperliquid perps and spot markets: price, 24h volume and 24h change, with a scrolling news ticker." />
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <title>LED Board · Hyperliquid</title>
   </head>
   <body>
     <div id="root"></div>

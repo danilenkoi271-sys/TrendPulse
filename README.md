@@ -1,44 +1,50 @@
-# Trendline
+# Hyperliquid LED Board
 
-A play-money game where you buy and sell shares in the **top 10 YouTube creators** (a database trigger refuses an 11th). A share's price follows how the
-channel's views over the last 7 days compare with an expected pace.
+A full-screen LED scoreboard for [Hyperliquid](https://hyperliquid.xyz) perps and spot markets. It shows one market at a
+time in big amber dot-matrix type: the **name**, the **price**, **24h volume** and **24h % change**, with a scrolling
+**news ticker** underneath. A green ▲ or red ▼ on each headline shows the direction the news is likely to push the price.
 
-> **Play money. No cash value. No deposits or withdrawals.** There is no payment, deposit, withdrawal or
-> cash-conversion code in this project, by design.
+- Prices refresh **every 10 seconds**.
+- The board moves to the next market **every 30 seconds**.
+- Before you start, pick which perps and spot markets to cycle through (search, filter, top-10 shortcut). Your
+  choice and its order are remembered in the browser.
+- **Full screen:** the start screen's *Start full screen* button hides the browser chrome. In full screen, **tap or click
+  anywhere** (or press Space / → ) to jump to the next market; the 30 second timer restarts. ← goes back. Press Esc to leave.
+- The screen is kept awake while the board runs (where the browser supports it).
 
-**Verified vs. estimated.** Verified prices are computed from YouTube data every 15 minutes. Between
-those, the server inserts simulated ticks every minute (within ±5% of the last verified price). Every
-price in the UI is labelled *Verified* or *Estimated*.
+## Run
 
-## Layout
-- `supabase/migrations/` schema + RLS, functions, schedules (pg_cron / pg_net)
-- `supabase/functions/poll-views/` Edge Function (YouTube → `record_snapshot`)
-- `supabase/seed.sql` the 10 creators (channel IDs and expected views must be verified, see TODOs in the file)
-- `supabase/tests/` SQL tests (`run.sh`)
-- `src/` React + Vite + TypeScript app (landing page, markets, artist, portfolio)
+```bash
+npm install
+npm run dev        # http://localhost:5173
+npm run build      # static site in dist/ (relative paths, host it anywhere)
+npm test
+```
 
-## Setup
-1. `supabase start`, then `supabase db reset` (applies migrations + seed).
-2. `cp .env.example .env.local` and fill `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY`.
-3. `npm install && npm run dev`.
-4. Edge Function secrets: `supabase secrets set YOUTUBE_API_KEY=...` (`SUPABASE_SERVICE_ROLE_KEY` and
-   `SUPABASE_URL` are provided to functions automatically). Deploy with `supabase functions deploy poll-views`.
-5. Scheduling needs two Vault secrets so `pg_cron` can call the function (run once, never commit):
-   ```sql
-   select vault.create_secret('https://<project-ref>.supabase.co', 'project_url');
-   select vault.create_secret('<service role key>', 'service_role_key');
-   ```
-6. Verify the creator list, channel IDs and `expected_daily_views` in `seed.sql` (see its TODOs).
+No backend and no API keys: the browser calls Hyperliquid's public info API directly (it allows cross-origin requests).
 
-## Tests
-- `npm test` frontend + Edge Function tests (mocked YouTube). Set `TEST_DATABASE_URL` to also run the
-  function against real Postgres.
-- `TEST_DATABASE_URL=postgres://… npm run test:sql` SQL tests. **Point it at a scratch database: it drops and
-  recreates the `public` schema.** On plain Postgres it applies a test-only Supabase shim
-  (`supabase/tests/support/`); with a Supabase DB use `WITH_SHIM=0`.
+## Data
 
-## Security notes
-- The service role key is only read inside the Edge Function. `poll-views` rejects any caller that doesn't
-  present exactly that key (gateway JWT check is off so the public anon key can't burn YouTube quota).
-- `record_snapshot` and `simulated_tick` are executable by `service_role` only. Clients can't write to any table;
-  all writes go through `trade()`.
+| What | Source |
+|---|---|
+| Price, 24h volume, 24h change | `POST https://api.hyperliquid.xyz/info` with `metaAndAssetCtxs` (perps) and `spotMetaAndAssetCtxs` (spot). Price is the mark price; 24h change is mark price vs. `prevDayPx`; volume is `dayNtlVlm` in USD. |
+| News | Public crypto RSS feeds (Cointelegraph, CoinDesk, Decrypt, The Block), converted to JSON by the `api.rss2json.com` gateway, refreshed every 5 minutes. |
+
+Only the market kinds you selected are fetched on each refresh.
+
+### How news is matched and scored
+
+- **Which market a headline belongs to:** it mentions the asset by name or ticker (tickers match case-sensitively so words
+  like "link" or "sol" in prose don't count). Headlines about the whole market (Bitcoin, ETFs, the Fed, regulation,
+  stablecoins…) appear on every market, after the asset-specific ones.
+- **The arrow:** a keyword heuristic on the headline (words like *surges, approval, inflows* vs. *hack, lawsuit, plunge,
+  delisting*). Mixed or neutral headlines get a grey ■. It is an automatic estimate, not analysis, and will sometimes be wrong.
+
+## Limitations
+
+- The news gateway is a free third-party service; if it is down or rate limited, the ticker says "NEWS UNAVAILABLE" and prices keep working.
+- iPhone Safari has no Fullscreen API. Use Share → Add to Home Screen; the included web manifest then runs it full screen.
+- If a price refresh fails the board keeps the last numbers and shows OFFLINE in the corner until the next success.
+- Timing constants live in `src/lib/timing.ts`.
+
+> Hyperliquid prices shown here are for information only. This is not financial advice.

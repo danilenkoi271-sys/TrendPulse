@@ -1,39 +1,91 @@
-import { describe, expect, it } from 'vitest';
-import { formatMoney, formatPct, formatSigned, pctChange, round2 } from '../lib/format';
-import { downsample, mergeTicks, splitRuns } from '../lib/ticks';
-import type { Tick } from '../lib/types';
+import { describe, expect, it, vi } from 'vitest';
+import perpsFixture from './fixtures/perps.json';
+import spotFixture from './fixtures/spot.json';
+import { fetchMarkets, parsePerps, parseSpot } from '../lib/hyperliquid';
+import { formatPct, formatPrice, formatVolume, trend } from '../lib/format';
+import { loadSelection, saveSelection, DEFAULT_SELECTION } from '../lib/settings';
 
-const t = (id: number, price: number, sim: boolean): Tick => ({ id, artist_id: 'a', price, is_simulated: sim, created_at: new Date(1_700_000_000_000 + id * 60_000).toISOString() });
+describe('Hyperliquid parsing (real captured responses)', () => {
+  it('maps perps: mark price, 24h change from prevDayPx, 24h notional volume', () => {
+    const markets = parsePerps(perpsFixture);
+    const btc = markets.find((m) => m.key === 'perp:BTC')!;
+    const raw = (perpsFixture as unknown as [unknown, { markPx: string; prevDayPx: string; dayNtlVlm: string }[]])[1][0];
+    expect(btc.kind).toBe('perp');
+    expect(btc.price).toBe(parseFloat(raw.markPx));
+    expect(btc.volume).toBeCloseTo(parseFloat(raw.dayNtlVlm));
+    expect(btc.changePct).toBeCloseTo(((parseFloat(raw.markPx) - parseFloat(raw.prevDayPx)) / parseFloat(raw.prevDayPx)) * 100, 8);
+    const live = (perpsFixture as unknown as [{ universe: { isDelisted?: boolean }[] }, { markPx: string }[]])[0].universe.filter((u, i) => !u.isDelisted && parseFloat((perpsFixture as unknown as [unknown, { markPx: string }[]])[1][i].markPx) > 0).length;
+    expect(markets).toHaveLength(live);
+  });
 
-describe('format', () => {
-  it('formats play money with two decimals and separators', () => {
-    expect(formatMoney(1234.5)).toBe('$1,234.50');
-    expect(formatMoney(1000)).toBe('$1,000.00');
-    expect(formatSigned(-5)).toBe('−$5.00');
-    expect(formatSigned(5)).toBe('+$5.00');
-    expect(formatPct(2.345)).toBe('+2.35%');
-    expect(round2(1.005 + 1e-12)).toBe(1.01);
-    expect(pctChange(100, 110)).toBeCloseTo(10);
+  it('resolves @-style spot pair names to BASE/QUOTE and keeps named pairs', () => {
+    const markets = parseSpot(spotFixture);
+    const keys = markets.map((m) => m.key);
+    expect(keys[0]).toBe('spot:PURR/USDC');
+    expect(keys[1]).toBe('spot:HFUN/USDC'); // "@1" -> HFUN/USDC
+    expect(markets[1].base).toBe('HFUN');
+    expect(markets.every((m) => m.kind === 'spot' && m.price > 0)).toBe(true);
+  });
+
+  it('skips delisted perps and entries without a price', () => {
+    const raw = [
+      { universe: [{ name: 'AAA' }, { name: 'OLD', isDelisted: true }, { name: 'ZERO' }] },
+      [{ markPx: '2', prevDayPx: '1', dayNtlVlm: '10' }, { markPx: '5', prevDayPx: '5', dayNtlVlm: '1' }, { markPx: '0', prevDayPx: '0', dayNtlVlm: '0' }],
+    ];
+    expect(parsePerps(raw).map((m) => m.label)).toEqual(['AAA']);
+  });
+
+  it('fetches only the requested kinds, and tolerates one kind failing', async () => {
+    const calls: string[] = [];
+    const impl = vi.fn(async (_url: string, init?: RequestInit) => {
+      const type = JSON.parse(String(init?.body)).type as string;
+      calls.push(type);
+      if (type === 'spotMetaAndAssetCtxs') return new Response('nope', { status: 500 });
+      return new Response(JSON.stringify(perpsFixture), { status: 200 });
+    }) as unknown as typeof fetch;
+
+    const live = parsePerps(perpsFixture).length;
+    expect((await fetchMarkets({ perp: true, spot: false, fetchImpl: impl })).length).toBe(live);
+    expect(calls).toEqual(['metaAndAssetCtxs']);
+
+    calls.length = 0;
+    expect((await fetchMarkets({ fetchImpl: impl })).length).toBe(live); // spot failed, perps still show
+    expect(calls.sort()).toEqual(['metaAndAssetCtxs', 'spotMetaAndAssetCtxs']);
+
+    const dead = (async () => new Response('x', { status: 503 })) as unknown as typeof fetch;
+    await expect(fetchMarkets({ fetchImpl: dead })).rejects.toThrow(/503/);
   });
 });
 
-describe('ticks', () => {
-  it('splits into runs of the same kind with continuous joins', () => {
-    const runs = splitRuns([t(1, 10, false), t(2, 11, false), t(3, 12, true), t(4, 13, true), t(5, 14, false)]);
-    expect(runs.map((r) => [r.simulated, r.points.map((p) => p.id)])).toEqual([
-      [false, [1, 2]],
-      [true, [2, 3, 4]],
-      [false, [4, 5]],
-    ]);
+describe('formatting', () => {
+  it('formats prices for any magnitude', () => {
+    expect(formatPrice(59021.3)).toBe('$59,021.30');
+    expect(formatPrice(1626.4)).toBe('$1,626.40');
+    expect(formatPrice(1.6264)).toBe('$1.6264');
+    expect(formatPrice(0.070299)).toBe('$0.07030');
+    expect(formatPrice(0.00004961)).toBe('$0.00004961');
   });
-  it('merges without duplicates, ascending', () => {
-    expect(mergeTicks([t(2, 1, false), t(1, 1, false)], [t(2, 9, true), t(3, 1, false)]).map((x) => [x.id, x.price])).toEqual([[1, 1], [2, 9], [3, 1]]);
+  it('formats volume compactly', () => {
+    expect(formatVolume(5865463156.71)).toBe('$5.87B');
+    expect(formatVolume(42_500_000)).toBe('$42.50M');
+    expect(formatVolume(13_040)).toBe('$13.0K');
+    expect(formatVolume(850)).toBe('$850');
   });
-  it('downsamples keeping first and last', () => {
-    const many = Array.from({ length: 1000 }, (_, i) => t(i + 1, i, false));
-    const out = downsample(many, 100);
-    expect(out).toHaveLength(100);
-    expect(out[0].id).toBe(1);
-    expect(out[99].id).toBe(1000);
+  it('formats change with an explicit sign', () => {
+    expect(formatPct(4.8)).toBe('+4.80%');
+    expect(formatPct(-1.234)).toBe('-1.23%');
+    expect(formatPct(0)).toBe('0.00%');
+    expect(trend(-0.1)).toBe('down');
+  });
+});
+
+describe('settings', () => {
+  it('round-trips the selection in order and falls back to defaults', () => {
+    localStorage.clear();
+    expect(loadSelection()).toEqual(DEFAULT_SELECTION);
+    saveSelection(['perp:ETH', 'spot:HYPE/USDC', 'perp:BTC']);
+    expect(loadSelection()).toEqual(['perp:ETH', 'spot:HYPE/USDC', 'perp:BTC']);
+    localStorage.setItem('hl-led-board.v1', '{not json');
+    expect(loadSelection()).toEqual(DEFAULT_SELECTION);
   });
 });

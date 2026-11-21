@@ -5,5 +5,5 @@
     "skipLibCheck": true, "isolatedModules": true, "resolveJsonModule": true,
     "noUnusedLocals": true, "noUnusedParameters": true, "types": ["vitest/globals", "vite/client"]
   },
-  "include": ["src", "vite.config.ts", "vitest.config.ts", "supabase/functions/poll-views/handler.ts", "supabase/functions/poll-views/handler.test.ts"]
+  "include": ["src", "vite.config.ts", "vitest.config.ts"]
 }

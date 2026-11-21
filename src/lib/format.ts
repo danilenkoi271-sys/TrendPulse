@@ -1,37 +1,27 @@
-const money = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 2 });
-const num = new Intl.NumberFormat('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 4 });
-
-/** Play-money amounts, always two decimals with thousands separators. */
-export const formatMoney = (n: number) => money.format(n);
-
-export function formatSigned(n: number): string {
-  const s = money.format(Math.abs(n));
-  return n > 0 ? `+${s}` : n < 0 ? `−${s}` : s;
+/** Price with a sensible number of decimals for any magnitude, e.g. $59,021.30 / $1.6264 / $0.00004961. */
+export function formatPrice(p: number): string {
+  const abs = Math.abs(p);
+  const dp = abs >= 100 ? 2 : abs >= 1 ? 4 : abs >= 0.01 ? 5 : 8;
+  const s = p.toLocaleString('en-US', { minimumFractionDigits: dp === 8 ? 4 : dp, maximumFractionDigits: dp });
+  return `$${s}`;
 }
 
-export function formatPct(n: number): string {
-  const s = `${Math.abs(n).toFixed(2)}%`;
-  return n > 0 ? `+${s}` : n < 0 ? `−${s}` : s;
+/** Compact USD volume: $5.87B, $42.50M, $13.0K, $850. */
+export function formatVolume(v: number): string {
+  const abs = Math.abs(v);
+  if (abs >= 1e9) return `$${(v / 1e9).toFixed(2)}B`;
+  if (abs >= 1e6) return `$${(v / 1e6).toFixed(2)}M`;
+  if (abs >= 1e3) return `$${(v / 1e3).toFixed(1)}K`;
+  return `$${v.toFixed(0)}`;
 }
 
-export const formatShares = (n: number) => num.format(n);
-
-export function formatTime(iso: string | Date): string {
-  const d = typeof iso === 'string' ? new Date(iso) : iso;
-  return d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+export function formatPct(p: number): string {
+  const s = `${Math.abs(p).toFixed(2)}%`;
+  return p > 0 ? `+${s}` : p < 0 ? `-${s}` : s;
 }
 
-export function formatDateTime(iso: string): string {
-  const d = new Date(iso);
-  return `${d.toLocaleDateString([], { month: 'short', day: 'numeric' })}, ${formatTime(d)}`;
+export const trend = (n: number): 'up' | 'down' | 'flat' => (n > 0 ? 'up' : n < 0 ? 'down' : 'flat');
+
+export function formatClock(d: Date): string {
+  return d.toLocaleTimeString('en-GB', { hour12: false });
 }
-
-export const priceKind = (isSimulated: boolean): 'Estimated' | 'Verified' => (isSimulated ? 'Estimated' : 'Verified');
-
-export const round2 = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100;
-
-export function pctChange(from: number, to: number): number {
-  return from === 0 ? 0 : ((to - from) / from) * 100;
-}
-
-export const tone = (n: number): 'up' | 'down' | 'flat' => (n > 0 ? 'up' : n < 0 ? 'down' : 'flat');
