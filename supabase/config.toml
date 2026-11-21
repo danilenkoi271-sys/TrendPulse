@@ -1,0 +1,17 @@
+# Minimal Supabase CLI config. Run `supabase init` to regenerate a full one if preferred.
+project_id = "trendline"
+
+[db]
+major_version = 15
+
+[db.seed]
+enabled = true
+sql_paths = ["./seed.sql"]
+
+[realtime]
+enabled = true
+
+[functions.poll-views]
+# The gateway JWT check is off because the function authenticates the caller itself:
+# it requires the exact service role key (see index.ts). Works with legacy and new-style keys.
+verify_jwt = false
