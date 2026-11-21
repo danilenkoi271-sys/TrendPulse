@@ -1,153 +1,85 @@
 import { useEffect, useState, type CSSProperties } from 'react';
 import { Link } from 'react-router-dom';
 import { PriceBadge } from '../components/PriceBadge';
-import { Reveal, useEased, useInView, usePointerVars } from '../components/landing/motion';
-import { HERO_CHART, HONEST_CHART, SAMPLE_CREATORS, miniPath } from '../components/landing/sample';
+import { Odometer } from '../components/Odometer';
+import { HeroChart } from '../components/landing/HeroChart';
+import { Scrolly } from '../components/landing/Scrolly';
+import { Letters, Marquee, Reveal, useElementProgress, useEased, useInView, useMagnetic } from '../components/landing/motion';
+import { HONEST_CHART, SAMPLE_CREATORS } from '../components/landing/sample';
 import { formatMoney, formatPct, tone } from '../lib/format';
 import { useAuth } from '../hooks/useAuth';
 
-function HeroCard() {
-  const c = HERO_CHART;
-  return (
-    <div className="hero-card" data-testid="hero-card">
-      <div className="hero-card__top">
-        <span className="avatar" aria-hidden="true">PP</span>
-        <div><b>Pixel Pete</b><div className="muted hero-card__sub">Sample creator</div></div>
-        <span className="sample-tag">Sample data</span>
-      </div>
-      <div className="hero-card__price">
-        <b className="num">$104.80</b> <PriceBadge simulated />
-        <span className="num tone--up">+4.80% <em className="est-tag">est.</em></span>
-      </div>
-      <svg viewBox={`0 0 ${c.W} ${c.H}`} className="hero-chart" role="img" aria-label="Sample chart: a solid verified line followed by a dashed estimated tail">
-        <defs>
-          <clipPath id="hero-reveal"><rect className="hero-chart__reveal" x="0" y="0" width={c.W} height={c.H} /></clipPath>
-          <linearGradient id="hero-fill" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stopColor="var(--up)" stopOpacity=".18" /><stop offset="1" stopColor="var(--up)" stopOpacity="0" /></linearGradient>
-        </defs>
-        {[0.25, 0.5, 0.75].map((f) => <line key={f} x1="12" x2={c.W - 12} y1={c.H * f} y2={c.H * f} className="chart__grid" />)}
-        <g clipPath="url(#hero-reveal)">
-          <path d={c.areaPath} fill="url(#hero-fill)" />
-          <path d={c.verifiedPath} className="hero-chart__real" />
-          <path d={c.estimatedPath} className="hero-chart__est" />
-        </g>
-        {c.verifiedDots.map(([x, y], i) => <circle key={i} cx={x} cy={y} r="4.5" className="hero-chart__vdot" style={{ '--i': i } as CSSProperties} />)}
-        <circle cx={c.last[0]} cy={c.last[1]} r="10" className="hero-chart__ping" />
-        <circle cx={c.last[0]} cy={c.last[1]} r="5" className="hero-chart__end" />
-      </svg>
-      <ul className="chart__legend">
-        <li><i className="swatch swatch--real" /> Verified</li>
-        <li><i className="swatch swatch--est" /> Estimated between updates</li>
-      </ul>
-      <div className="hero-card__actions" aria-hidden="true">
-        <span className="btn btn--buy btn--sm">Buy</span><span className="btn btn--sell btn--sm">Sell</span>
-      </div>
-    </div>
-  );
-}
-
-function MiniCard({ i, className }: { i: number; className: string }) {
-  const m = SAMPLE_CREATORS[i];
-  const up = m.change > 0;
-  return (
-    <div className={`mini ${className}`}>
-      <div className="mini__top"><b>{m.name}</b><span className="sample-tag">Sample</span></div>
-      <div className="mini__row">
-        <div>
-          <div className="num mini__price">{formatMoney(m.price)}</div>
-          <div className={`num tone--${tone(m.change)} mini__chg`}>{formatPct(m.change)} <PriceBadge simulated={m.est} /></div>
-        </div>
-        <svg viewBox="0 0 100 36" width="84" height="32" aria-hidden="true"><path d={miniPath(i + 1, up)} fill="none" stroke={up ? 'var(--up)' : 'var(--down)'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
-      </div>
-    </div>
-  );
-}
-
 function Hero() {
   const { session } = useAuth();
-  const ref = usePointerVars<HTMLElement>();
   const [ready, setReady] = useState(false);
-  useEffect(() => { const t = requestAnimationFrame(() => setReady(true)); return () => cancelAnimationFrame(t); }, []);
+  const cta = useMagnetic<HTMLAnchorElement>(0.35);
+  useEffect(() => { const t = setTimeout(() => setReady(true), 60); return () => clearTimeout(t); }, []);
   return (
-    <section className={`hero ${ready ? 'is-ready' : ''}`} ref={ref}>
-      <div className="hero__copy">
-        <span className="pill"><i /> Play money · Top 10 YouTube creators</span>
-        <h1 className="hero__title">
-          <span className="line"><span>Trade the creators</span></span>
-          <span className="line"><span>everyone's <em>watching.</em></span></span>
-        </h1>
+    <section className={`hero ${ready ? 'is-ready' : ''}`}>
+      <div className="hero__top">
+        <span className="hero__tag"><i /> Top 10 YouTube creators · Play money</span>
+        <span className="hero__tag hero__tag--r">Verified every 15 min · Estimated every minute</span>
+      </div>
+      <h1 className="mega" aria-label="The creators everyone's watching.">
+        <span className="mega__line" aria-hidden="true"><Letters text="THE CREATORS" start={100} /></span>
+        <span className="mega__line" aria-hidden="true"><Letters text="EVERYONE'S" start={450} /></span>
+        <span className="mega__line mega__line--hot" aria-hidden="true"><Letters text="WATCHING." start={750} /></span>
+      </h1>
+      <div className="hero__row">
         <p className="hero__sub">
-          Trendline is a play-money market where each share tracks how a top YouTube channel's views compare with its expected pace. Start with $1,000 of pretend cash and see how well you read the trend.
+          Trendline is a play-money market. Each share tracks how a top YouTube channel's views compare with its expected pace. Start with <b>$1,000</b> of pretend cash and find out if you can spot the trend before everyone else.
         </p>
-        <div className="hero__actions">
-          <Link to={session ? '/markets' : '/login?mode=signup'} className="btn btn--primary btn--lg">{session ? 'Open markets' : 'Start with $1,000'}</Link>
-          <a href="#how" className="btn btn--lg">How prices work</a>
+        <div className="hero__cta">
+          <Link ref={cta} to={session ? '/markets' : '/login?mode=signup'} className="btn btn--primary btn--lg btn--magnetic">{session ? 'Open markets' : 'Start with $1,000'} <span aria-hidden="true">→</span></Link>
+          <a href="#how" className="btn btn--lg">See how it works</a>
         </div>
-        <p className="hero__fine">Verified prices are calculated from YouTube data every 15 minutes. In between, you'll see estimates, always labelled.</p>
       </div>
-      <div className="hero__stage">
-        <div className="stage__main"><HeroCard /></div>
-        <MiniCard i={2} className="mini--a" />
-        <MiniCard i={1} className="mini--b" />
-      </div>
+      <HeroChart />
     </section>
   );
 }
 
-function Ticker() {
-  const items = [...SAMPLE_CREATORS, ...SAMPLE_CREATORS];
+function Row({ filled }: { filled?: boolean }) {
   return (
-    <div className="ticker" aria-label="Sample prices, for illustration only">
-      <span className="ticker__note">Sample data</span>
-      <div className="ticker__track">
-        {items.map((a, i) => (
-          <span className="ticker__item" key={i} aria-hidden={i >= SAMPLE_CREATORS.length}>
-            <b>{a.name}</b>
-            <span className="num">{formatMoney(a.price)}</span>
-            <span className={`num tone--${tone(a.change)}`}>{formatPct(a.change)}</span>
-            <span className={`ticker__kind ${a.est ? 'is-est' : ''}`}>{a.est ? 'est.' : 'verified'}</span>
-          </span>
-        ))}
-      </div>
+    <>
+      {SAMPLE_CREATORS.map((c) => (
+        <span className={`mq ${filled ? 'mq--filled' : ''}`} key={c.name}>
+          <span className="mq__name">{c.name}</span>
+          <span className={`mq__chip num tone--${tone(c.change)}`}>{formatPct(c.change)}</span>
+          <span className="mq__star" aria-hidden="true">✺</span>
+        </span>
+      ))}
+    </>
+  );
+}
+
+function Marquees() {
+  return (
+    <div className="marquees" aria-label="Sample creators, for illustration only">
+      <Marquee dir={1} speed={0.5}><Row /></Marquee>
+      <Marquee dir={-1} speed={0.5}><Row filled /></Marquee>
+      <span className="marquees__note">Sample data · fictional creators</span>
     </div>
   );
 }
 
-function Stat({ value, label, format }: { value: number; label: string; format: (n: number) => string }) {
+function Stat({ value, label, fmt, from }: { value: number; label: string; fmt: (n: number) => string; from: string }) {
   const [ref, seen] = useInView<HTMLDivElement>(0.5);
-  const v = useEased(seen ? value : 0, 0.08);
-  return <div className="stat-tile" ref={ref}><b className="num">{format(v)}</b><span>{label}</span></div>;
+  return (
+    <div className="bigstat" ref={ref}>
+      <Odometer value={seen ? fmt(value) : from} className="bigstat__n" />
+      <span>{label}</span>
+    </div>
+  );
 }
 
 function Stats() {
   return (
-    <section className="stats-strip" aria-label="Key facts">
-      <Stat value={10} label="YouTube creators, no more" format={(n) => String(Math.round(n))} />
-      <Stat value={1000} label="play money to start" format={(n) => `$${Math.round(n).toLocaleString('en-US')}`} />
-      <Stat value={15} label="minutes between verified updates" format={(n) => String(Math.round(n))} />
-      <Stat value={0} label="real money involved, ever" format={() => '$0'} />
-    </section>
-  );
-}
-
-const STEPS = [
-  { n: '01', title: 'Pick a creator', body: "Ten of YouTube's biggest channels, each with an expected daily view pace. You start with $1,000 of play money. There's nothing to deposit, ever." },
-  { n: '02', title: 'Watch the price follow the views', body: "Every 15 minutes we compare a channel's last 7 days of views with its expected pace. Ahead of pace and the price climbs; behind and it slips. One update moves a price 10% at most." },
-  { n: '03', title: 'Buy and sell', body: 'Trade any time. You can sell what you own but never sell short. Your portfolio tracks average cost, value and profit or loss, with every price marked verified or estimated.' },
-];
-
-function HowItWorks() {
-  return (
-    <section className="how" id="how">
-      <Reveal as="h2" className="section-h">How Trendline works</Reveal>
-      <div className="how__grid">
-        {STEPS.map((s, i) => (
-          <Reveal key={s.n} delay={i * 90} className="how__item">
-            <span className="how__n num">{s.n}</span>
-            <h3>{s.title}</h3>
-            <p className="muted">{s.body}</p>
-          </Reveal>
-        ))}
-      </div>
+    <section className="bigstats" aria-label="Key facts">
+      <Stat value={10} from="0" fmt={(n) => String(n)} label="YouTube creators. No more." />
+      <Stat value={1000} from="$0" fmt={(n) => `$${n.toLocaleString('en-US')}`} label="of play money to start" />
+      <Stat value={15} from="0" fmt={(n) => String(n)} label="minutes between verified updates" />
+      <Stat value={0} from="$99" fmt={() => '$0'} label="of real money. Ever." />
     </section>
   );
 }
@@ -157,21 +89,21 @@ const MOODS: [number, string][] = [[0.7, 'Cooling off'], [0.95, 'A little behind
 function PriceToy() {
   const [ratio, setRatio] = useState(1.3);
   const price = 100 * (1 + 0.5 * (ratio - 1));
-  const shown = useEased(price, 0.18);
   const mood = MOODS.find(([max]) => ratio < max)![1];
   const tn = tone(Math.round((price - 100) * 100));
+  const eased = useEased(price, 0.2);
   return (
     <section className="toy">
       <Reveal className="toy__copy">
         <span className="eyebrow">Try the formula</span>
-        <h2 className="section-h">Beat the pace,<br />the price climbs.</h2>
-        <p className="muted">A price is a level that carries over day to day. It reacts to one thing: how a channel's last 7 days of views compare with what we expected. Drag the slider to feel it.</p>
-        <p className="toy__fine">Illustration with a $100 starting price. In the real market each verified update is capped at ±10% from the one before.</p>
+        <h2 className="section-h">Beat the pace.<br />The price climbs.</h2>
+        <p className="muted">A price is a level that carries over day to day. It reacts to one thing: how a channel's last 7 days of views compare with what we expected. Drag the slider.</p>
+        <p className="toy__fine">Illustration from a $100 starting price. In the real market each verified update is capped at ±10% from the one before.</p>
       </Reveal>
-      <Reveal delay={100} className="toy__panel card">
+      <Reveal delay={120} className="toy__panel">
         <div className="toy__readout">
           <span className="toy__mood" key={mood}>{mood}</span>
-          <b className={`toy__price num tone--${tn}`}>{formatMoney(shown)}</b>
+          <span className={`toy__price tone--${tn}`}><Odometer value={formatMoney(Math.round(eased * 100) / 100)} /></span>
         </div>
         <label className="toy__slider">
           <span>Views vs. expected pace</span>
@@ -217,11 +149,14 @@ function Honest() {
 
 function Finale() {
   const { session } = useAuth();
+  const ref = useElementProgress<HTMLElement>();
+  const cta = useMagnetic<HTMLAnchorElement>(0.35);
   return (
-    <section className="finale">
-      <Reveal className="finale__card">
+    <section className="finale" ref={ref}>
+      <div className="finale__bg" aria-hidden="true"><span>BE EARLY. BE EARLY. BE EARLY.</span></div>
+      <Reveal className="finale__inner">
         <h2>Pretend money.<br />Real bragging rights.</h2>
-        <Link to={session ? '/markets' : '/login?mode=signup'} className="btn btn--lg finale__btn">{session ? 'Open markets' : 'Get your $1,000'}</Link>
+        <Link ref={cta} to={session ? '/markets' : '/login?mode=signup'} className="btn btn--primary btn--lg btn--magnetic">{session ? 'Open markets' : 'Get your $1,000'} <span aria-hidden="true">→</span></Link>
       </Reveal>
     </section>
   );
@@ -231,9 +166,9 @@ export default function Landing() {
   return (
     <main className="landing">
       <Hero />
-      <Ticker />
+      <Marquees />
       <Stats />
-      <HowItWorks />
+      <Scrolly />
       <PriceToy />
       <Honest />
       <Finale />

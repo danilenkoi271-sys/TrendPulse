@@ -1,5 +1,6 @@
 import { Navigate, Outlet, Route, Routes, useLocation } from 'react-router-dom';
 import { useEffect } from 'react';
+import { CursorRing, ScrollBar } from './components/landing/motion';
 import { Header } from './components/Header';
 import { useAuth } from './hooks/useAuth';
 import Landing from './pages/Landing';
@@ -21,10 +22,14 @@ function ScrollTop() {
 }
 
 export default function App() {
+  const { pathname } = useLocation();
   return (
     <>
       <ScrollTop />
+      <ScrollBar />
+      <CursorRing />
       <Header />
+      <div className="route" key={pathname}>
       <Routes>
         <Route path="/" element={<Landing />} />
         <Route path="/login" element={<Auth />} />
@@ -35,6 +40,7 @@ export default function App() {
         </Route>
         <Route path="*" element={<main className="page"><h1>Page not found</h1></main>} />
       </Routes>
+      </div>
     </>
   );
 }

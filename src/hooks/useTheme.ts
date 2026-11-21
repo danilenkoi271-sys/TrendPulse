@@ -5,14 +5,14 @@ const KEY = 'trendline-theme';
 
 function initial(): Theme {
   const attr = document.documentElement.getAttribute('data-theme');
-  return attr === 'dark' ? 'dark' : 'light';
+  return attr === 'light' ? 'light' : 'dark';
 }
 
 export function useTheme() {
   const [theme, setTheme] = useState<Theme>(initial);
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
-    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', theme === 'dark' ? '#0a0e16' : '#ffffff');
+    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', theme === 'dark' ? '#0c0c0b' : '#f3f0e8');
   }, [theme]);
   const toggle = useCallback(() => {
     setTheme((t) => {

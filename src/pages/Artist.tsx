@@ -10,6 +10,7 @@ import { PositionPanel } from '../components/PositionPanel';
 import { PriceBadge } from '../components/PriceBadge';
 import { PriceChart } from '../components/PriceChart';
 import { Avatar } from '../components/Avatar';
+import { Odometer } from '../components/Odometer';
 
 const RANGES: Range[] = ['1H', '1D', '1W', '1M'];
 const NONE: Tick[] = [];
@@ -59,7 +60,7 @@ export default function ArtistPage() {
         <header className="artist__head">
           <div className="artist__title"><Avatar name={artist.name} /><h1>{artist.name}</h1></div>
           <div className="artist__price">
-            <span className="artist__big num" data-testid="header-price">{latest ? formatMoney(latest.price) : '—'}</span>
+            <span className="artist__big" data-testid="header-price">{latest ? <Odometer value={formatMoney(latest.price)} flash /> : '—'}</span>
             {latest && <PriceBadge simulated={latest.is_simulated} />}
           </div>
           <div className="artist__meta">
@@ -74,12 +75,12 @@ export default function ArtistPage() {
         </header>
 
         <div className="card chartcard">
-          <div className="range" role="tablist" aria-label="Chart range">
+          <div className="range" role="tablist" aria-label="Chart range" style={{ '--i': RANGES.indexOf(range) } as React.CSSProperties}>
             {RANGES.map((r) => (
               <button key={r} role="tab" aria-selected={range === r} className={`range__btn ${range === r ? 'is-on' : ''}`} onClick={() => setRange(r)}>{r}</button>
             ))}
           </div>
-          <PriceChart ticks={ticks} />
+          <PriceChart ticks={ticks} revealKey={`${artist.id}-${range}`} />
           <p className="chartcard__note">
             {range === '1W' || range === '1M' ? 'Longer ranges show verified points, plus every estimate from the last hour. ' : ''}
             {mode === 'realtime' ? 'New prices appear here automatically.' : mode === 'polling' ? 'Checking for new prices every 30 seconds.' : 'Connecting for automatic updates…'}

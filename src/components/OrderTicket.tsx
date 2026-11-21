@@ -81,7 +81,7 @@ export function OrderTicket({ artist, tick, balance, sharesHeld, onTraded }: Pro
         </div>
       ) : (
         <>
-          <div className="seg" role="tablist" aria-label="Order side">
+          <div className="seg" data-on={side} role="tablist" aria-label="Order side">
             {(['buy', 'sell'] as const).map((s) => (
               <button key={s} role="tab" aria-selected={side === s} className={`seg__btn seg__btn--${s} ${side === s ? 'is-on' : ''}`}
                 onClick={() => { setSide(s); setError(null); setStep('edit'); }} disabled={busy}>

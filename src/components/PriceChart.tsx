@@ -6,7 +6,7 @@ import type { Tick } from '../lib/types';
 const H = 280;
 const PAD = { t: 16, r: 12, b: 26, l: 12 };
 
-export function PriceChart({ ticks }: { ticks: Tick[] }) {
+export function PriceChart({ ticks, revealKey = 'chart' }: { ticks: Tick[]; revealKey?: string }) {
   const wrap = useRef<HTMLDivElement>(null);
   const [w, setW] = useState(640);
   const [hover, setHover] = useState<number | null>(null);
@@ -56,7 +56,7 @@ export function PriceChart({ ticks }: { ticks: Tick[] }) {
         aria-label={`Price chart. Latest price ${formatMoney(last)}, ${priceKind(lastT.is_simulated)}.`}>
         <defs>
           <linearGradient id="chart-fill" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="currentColor" stopOpacity="0.22" />
+            <stop offset="0%" stopColor="currentColor" stopOpacity="0.2" />
             <stop offset="100%" stopColor="currentColor" stopOpacity="0" />
           </linearGradient>
         </defs>
@@ -66,10 +66,14 @@ export function PriceChart({ ticks }: { ticks: Tick[] }) {
             <text x={PAD.l + 2} y={geo.y(v) - 5} className="chart__axis">{formatMoney(v)}</text>
           </g>
         ))}
-        <path d={`${geo.path(ticks)} L${geo.x(lastT)},${H - PAD.b} L${geo.x(ticks[0])},${H - PAD.b} Z`} fill="url(#chart-fill)" />
-        {runs.map((r, i) => (
-          <path key={i} d={geo.path(r.points)} className={r.simulated ? 'chart__line chart__line--est' : 'chart__line chart__line--real'} data-kind={r.simulated ? 'estimated' : 'verified'} />
-        ))}
+        <clipPath id={`reveal-${revealKey}`}><rect key={revealKey} className="chart__reveal" x="0" y="0" width={w} height={H} /></clipPath>
+        <g clipPath={`url(#reveal-${revealKey})`}>
+          <path d={`${geo.path(ticks)} L${geo.x(lastT)},${H - PAD.b} L${geo.x(ticks[0])},${H - PAD.b} Z`} fill="url(#chart-fill)" />
+          {runs.map((r, i) => (
+            <path key={i} d={geo.path(r.points)} className={r.simulated ? 'chart__line chart__line--est' : 'chart__line chart__line--real'} data-kind={r.simulated ? 'estimated' : 'verified'} />
+          ))}
+        </g>
+        <circle cx={geo.x(lastT)} cy={geo.y(lastT.price)} r="6" className="chart__pulse" />
         <circle cx={geo.x(lastT)} cy={geo.y(lastT.price)} r="5" className={`chart__dot ${lastT.is_simulated ? 'chart__dot--est' : ''}`} />
         {hoverTick && (
           <g>

@@ -4,6 +4,7 @@ import { fetchArtists, fetchRecentTicks } from '../lib/api';
 import { formatMoney, formatPct, pctChange, tone } from '../lib/format';
 import type { Artist, Tick } from '../lib/types';
 import { Avatar } from '../components/Avatar';
+import { Odometer } from '../components/Odometer';
 import { PriceBadge } from '../components/PriceBadge';
 import { Sparkline } from '../components/Sparkline';
 
@@ -79,7 +80,7 @@ export default function Markets() {
                   <div>
                     {last ? (
                       <>
-                        <div className="mcard__price num">{formatMoney(last.price)}</div>
+                        <div className="mcard__price"><Odometer value={formatMoney(last.price)} flash /></div>
                         <div className="mcard__sub">
                           <PriceBadge simulated={last.is_simulated} />
                           <span className={`num tone--${tone(change)}`}>{formatPct(change)} vs. base</span>
