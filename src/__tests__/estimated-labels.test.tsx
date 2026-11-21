@@ -34,14 +34,14 @@ beforeEach(() => { vi.clearAllMocks(); });
 
 describe('Estimated labelling', () => {
   it('order ticket shows "Estimated price" and an Estimated badge when the latest tick is simulated', () => {
-    render(<OrderTicket artist={artist} tick={tick(2, 101.5, true)} balance={1000} sharesHeld={0} onTraded={() => {}} />);
+    render(<MemoryRouter><OrderTicket artist={artist} tick={tick(2, 101.5, true)} balance={1000} sharesHeld={0} onTraded={() => {}} /></MemoryRouter>);
     expect(screen.getByText('Estimated price')).toBeInTheDocument();
     expect(within(screen.getByLabelText('Order ticket')).getAllByTestId('price-badge')[0]).toHaveTextContent('Estimated');
     expect(screen.queryByText('Verified price')).not.toBeInTheDocument();
   });
 
   it('order ticket says Verified when the latest tick is real', () => {
-    render(<OrderTicket artist={artist} tick={tick(2, 101.5, false)} balance={1000} sharesHeld={0} onTraded={() => {}} />);
+    render(<MemoryRouter><OrderTicket artist={artist} tick={tick(2, 101.5, false)} balance={1000} sharesHeld={0} onTraded={() => {}} /></MemoryRouter>);
     expect(screen.getByText('Verified price')).toBeInTheDocument();
     expect(screen.getByTestId('price-badge')).toHaveTextContent('Verified');
   });
@@ -49,7 +49,7 @@ describe('Estimated labelling', () => {
   it('review step and confirmation state the price type (estimated)', async () => {
     vi.mocked(api.executeTrade).mockResolvedValue({ price: 101.5, isSimulated: true, shares: 2 });
     const onTraded = vi.fn();
-    render(<OrderTicket artist={artist} tick={tick(2, 101.5, true)} balance={1000} sharesHeld={0} onTraded={onTraded} />);
+    render(<MemoryRouter><OrderTicket artist={artist} tick={tick(2, 101.5, true)} balance={1000} sharesHeld={0} onTraded={onTraded} /></MemoryRouter>);
     const user = userEvent.setup();
     await user.clear(screen.getByLabelText('Shares'));
     await user.type(screen.getByLabelText('Shares'), '2');
@@ -66,7 +66,7 @@ describe('Estimated labelling', () => {
 
   it('confirmation says verified when the executed price was real', async () => {
     vi.mocked(api.executeTrade).mockResolvedValue({ price: 99, isSimulated: false, shares: -1 });
-    render(<OrderTicket artist={artist} tick={tick(2, 99, false)} balance={1000} sharesHeld={3} onTraded={() => {}} />);
+    render(<MemoryRouter><OrderTicket artist={artist} tick={tick(2, 99, false)} balance={1000} sharesHeld={3} onTraded={() => {}} /></MemoryRouter>);
     const user = userEvent.setup();
     await user.click(screen.getByRole('tab', { name: 'Sell' }));
     await user.click(screen.getByRole('button', { name: /review sell order/i }));
@@ -77,7 +77,7 @@ describe('Estimated labelling', () => {
   });
 
   it('blocks overselling and over-budget buys in the ticket', async () => {
-    render(<OrderTicket artist={artist} tick={tick(2, 100, true)} balance={150} sharesHeld={1} onTraded={() => {}} />);
+    render(<MemoryRouter><OrderTicket artist={artist} tick={tick(2, 100, true)} balance={150} sharesHeld={1} onTraded={() => {}} /></MemoryRouter>);
     const user = userEvent.setup();
     await user.clear(screen.getByLabelText('Shares'));
     await user.type(screen.getByLabelText('Shares'), '2');
@@ -107,11 +107,12 @@ describe('Estimated labelling', () => {
     vi.mocked(api.fetchArtists).mockResolvedValue([artist, a2]);
     vi.mocked(api.fetchRecentTicks).mockImplementation(async (id) => (id === 'a1' ? [tick(1, 100, false), tick(2, 102, true)] : [tick(3, 97, false)]));
     render(<MemoryRouter><Markets /></MemoryRouter>);
-    const rows = await screen.findAllByRole('link');
+    const rows = await screen.findAllByRole('listitem');
     expect(within(rows.find((r) => r.textContent?.includes('Nova Kline'))!).getByTestId('price-badge')).toHaveTextContent('Estimated');
     expect(within(rows.find((r) => r.textContent?.includes('DJ Marmalade'))!).getByTestId('price-badge')).toHaveTextContent('Verified');
-    await userEvent.setup().type(screen.getByPlaceholderText('Search artists'), 'marm');
+    await userEvent.setup().type(screen.getByPlaceholderText('Search creators'), 'marm');
     expect(screen.queryByText('Nova Kline')).not.toBeInTheDocument();
+    expect(screen.getByText('DJ Marmalade')).toBeInTheDocument();
   });
 });
 

@@ -11,8 +11,7 @@ PSQL=(psql "$URL" -v ON_ERROR_STOP=1 -q)
 "${PSQL[@]}" -c "drop schema if exists public cascade; create schema public; drop schema if exists auth cascade;" >/dev/null 2>&1
 "${PSQL[@]}" -c "grant all on schema public to public;" >/dev/null
 [ "${WITH_SHIM:-1}" = "1" ] && "${PSQL[@]}" -f support/00_supabase_shim.sql >/dev/null
-for m in ../migrations/*_schema.sql ../migrations/*_functions.sql; do "${PSQL[@]}" -f "$m" >/dev/null; done
-"${PSQL[@]}" -f ../seed.sql >/dev/null
+for m in ../migrations/*_schema.sql ../migrations/*_functions.sql ../migrations/*_top10_limit.sql; do "${PSQL[@]}" -f "$m" >/dev/null; done
 fail=0
 for t in [0-9]*.sql; do
   echo "== $t"

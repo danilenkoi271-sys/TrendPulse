@@ -1,6 +1,6 @@
 # Trendline
 
-A play-money game where you buy and sell shares in YouTube artists. A share's price follows how the
+A play-money game where you buy and sell shares in the **top 10 YouTube creators** (a database trigger refuses an 11th). A share's price follows how the
 channel's views over the last 7 days compare with an expected pace.
 
 > **Play money. No cash value. No deposits or withdrawals.** There is no payment, deposit, withdrawal or
@@ -13,7 +13,7 @@ price in the UI is labelled *Verified* or *Estimated*.
 ## Layout
 - `supabase/migrations/` schema + RLS, functions, schedules (pg_cron / pg_net)
 - `supabase/functions/poll-views/` Edge Function (YouTube → `record_snapshot`)
-- `supabase/seed.sql` three fictional sample artists (placeholder channel IDs, see TODOs)
+- `supabase/seed.sql` the 10 creators (channel IDs and expected views must be verified, see TODOs in the file)
 - `supabase/tests/` SQL tests (`run.sh`)
 - `src/` React + Vite + TypeScript app (landing page, markets, artist, portfolio)
 
@@ -28,7 +28,7 @@ price in the UI is labelled *Verified* or *Estimated*.
    select vault.create_secret('https://<project-ref>.supabase.co', 'project_url');
    select vault.create_secret('<service role key>', 'service_role_key');
    ```
-6. Replace the placeholder channel IDs in the `artists` table (see `seed.sql` TODOs).
+6. Verify the creator list, channel IDs and `expected_daily_views` in `seed.sql` (see its TODOs).
 
 ## Tests
 - `npm test` frontend + Edge Function tests (mocked YouTube). Set `TEST_DATABASE_URL` to also run the

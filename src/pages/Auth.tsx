@@ -38,8 +38,8 @@ export default function Auth() {
   return (
     <main className="auth">
       <div className="auth__card card">
-        <div className="auth__sticker" aria-hidden="true">$1,000<small>play money</small></div>
-        <h1>{mode === 'signup' ? 'Grab your starter stack' : 'Welcome back'}</h1>
+        <div className="auth__sticker" aria-hidden="true">$1,000 <small>play money to start</small></div>
+        <h1>{mode === 'signup' ? 'Create your account' : 'Welcome back'}</h1>
         <p className="muted">
           {mode === 'signup' ? 'New accounts start with $1,000 of play money. It has no cash value and can never be withdrawn.' : 'Sign in to pick up where you left off.'}
         </p>

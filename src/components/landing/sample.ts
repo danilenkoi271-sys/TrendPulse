@@ -1,14 +1,25 @@
 // Illustrative sample data for the landing page only. Not real prices; names are fictional.
 
-export const SAMPLE_ARTISTS = [
-  { name: 'Nova Kline', price: 104.8, change: 4.8, est: true },
-  { name: 'The Lantern Club', price: 92.15, change: -7.85, est: false },
-  { name: 'DJ Marmalade', price: 118.4, change: 18.4, est: true },
-  { name: 'Velvet Hours', price: 99.02, change: -0.98, est: false },
-  { name: 'Mina & The Moths', price: 110.66, change: 10.66, est: true },
-  { name: 'Okonkwo Sound', price: 87.3, change: -12.7, est: false },
+export const SAMPLE_CREATORS = [
+  { name: 'Pixel Pete', price: 104.8, change: 4.8, est: true },
+  { name: 'Mira Makes', price: 92.15, change: -7.85, est: false },
+  { name: 'Gadget Gus', price: 118.4, change: 18.4, est: true },
+  { name: 'Lola Lifts', price: 99.02, change: -0.98, est: false },
+  { name: 'Chef Okonkwo', price: 110.66, change: 10.66, est: true },
+  { name: 'Skate Sisters', price: 87.3, change: -12.7, est: false },
   { name: 'Paper Planets', price: 101.25, change: 1.25, est: true },
 ];
+
+/** Tiny deterministic sparkline path for the sample cards (viewBox 0 0 100 36). */
+export function miniPath(seed: number, up: boolean): string {
+  const pts: string[] = [];
+  for (let i = 0; i <= 20; i++) {
+    const trend = (up ? 1 : -1) * (i / 20) * 14;
+    const y = 18 - trend + Math.sin(i * 1.3 + seed) * 4 + Math.cos(i * 0.7 + seed * 2) * 3;
+    pts.push(`${i ? 'L' : 'M'}${(i * 5).toFixed(1)},${Math.min(33, Math.max(3, y)).toFixed(1)}`);
+  }
+  return pts.join(' ');
+}
 
 // Verified points (every 15 minutes in the real product), x in 0..400.
 const VERIFIED: [number, number][] = [[0, 96.0], [67, 97.6], [133, 96.9], [200, 99.4], [267, 101.8], [333, 100.9], [400, 103.1]];

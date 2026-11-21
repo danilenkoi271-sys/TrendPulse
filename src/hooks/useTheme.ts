@@ -12,7 +12,7 @@ export function useTheme() {
   const [theme, setTheme] = useState<Theme>(initial);
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
-    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', theme === 'dark' ? '#15110D' : '#F5EEDF');
+    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', theme === 'dark' ? '#0a0e16' : '#ffffff');
   }, [theme]);
   const toggle = useCallback(() => {
     setTheme((t) => {

@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { executeTrade, type TradeReceipt } from '../lib/api';
 import { formatMoney, formatShares, formatTime, round2 } from '../lib/format';
 import type { Artist, Tick } from '../lib/types';
@@ -18,7 +19,8 @@ interface Props {
 const QTY_RE = /^\d{0,9}(\.\d{0,4})?$/;
 
 export function OrderTicket({ artist, tick, balance, sharesHeld, onTraded }: Props) {
-  const [side, setSide] = useState<Side>('buy');
+  const [params] = useSearchParams();
+  const [side, setSide] = useState<Side>(params.get('side') === 'sell' ? 'sell' : 'buy');
   const [qty, setQty] = useState('1');
   const [step, setStep] = useState<Step>('edit');
   const [busy, setBusy] = useState(false);

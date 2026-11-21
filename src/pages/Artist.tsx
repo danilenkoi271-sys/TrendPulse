@@ -9,6 +9,7 @@ import { OrderTicket } from '../components/OrderTicket';
 import { PositionPanel } from '../components/PositionPanel';
 import { PriceBadge } from '../components/PriceBadge';
 import { PriceChart } from '../components/PriceChart';
+import { Avatar } from '../components/Avatar';
 
 const RANGES: Range[] = ['1H', '1D', '1W', '1M'];
 const NONE: Tick[] = [];
@@ -54,9 +55,9 @@ export default function ArtistPage() {
   return (
     <main className="page artist">
       <div className="artist__main">
-        <Link to="/markets" className="back">← Markets</Link>
+        <Link to="/markets" className="back">← All markets</Link>
         <header className="artist__head">
-          <h1>{artist.name}</h1>
+          <div className="artist__title"><Avatar name={artist.name} /><h1>{artist.name}</h1></div>
           <div className="artist__price">
             <span className="artist__big num" data-testid="header-price">{latest ? formatMoney(latest.price) : '—'}</span>
             {latest && <PriceBadge simulated={latest.is_simulated} />}
